@@ -94,7 +94,15 @@ static PyObject *LoadFromList(PyObject *self, PyObject *args)
 		}
 		for (long long j = 0; j < n_dim; ++j)
 		{
+#if PY_MAJOR_VERSION >= 3
+			PyObject* numberstr = PyUnicode_AsEncodedString(PyList_GetItem(vec, j), "utf-8", "ignore");
+			const char *numbers = PyBytes_AS_STRING(numberstr);
+			real x = atof(numbers);
+			Py_XDECREF(numbers);
+			Py_XDECREF(numberstr);
+#else
 			real x = atof(PyString_AsString(PyObject_Str(PyList_GetItem(vec, j))));
+#endif
 			data[ll + j] = x;
 		}
 	}
@@ -124,8 +132,27 @@ static PyMethodDef PyExtMethods[] =
 	{ NULL, NULL, 0, NULL }
 };
 
-PyMODINIT_FUNC initLargeVis()
-{
-	printf("LargeVis successfully imported!\n");
+#if PY_MAJOR_VERSION >= 3
+	static struct PyModuleDef moduledef = {
+		PyModuleDef_HEAD_INIT,
+		"LargeVis",          /* m_name */
+		"LargeVis module",   /* m_doc */
+		-1,                  /* m_size */
+		PyExtMethods,        /* m_methods */
+		NULL,                /* m_reload */
+		NULL,                /* m_traverse */
+		NULL,                /* m_clear */
+		NULL,                /* m_free */
+	};
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+PyMODINIT_FUNC PyInit_LargeVis() {
+	return PyModule_Create(&moduledef);
+}
+#else
+PyMODINIT_FUNC initLargeVis() {
 	Py_InitModule("LargeVis", PyExtMethods);
 }
+#endif
+
